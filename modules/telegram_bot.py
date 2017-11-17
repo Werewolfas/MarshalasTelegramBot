@@ -3,11 +3,13 @@ import configparser
 from modules.sqlite_client import SqlLiteDb
 from modules.giphy_api import GiphyApi
 from modules.coub_api import CoubApi
+import datetime
 
 
 class TelegramBot:
 
     def __init__(self):
+        self.now = datetime.datetime.now()
         self.config = configparser.ConfigParser()
         self.config.read("config.ini")
         self.db = SqlLiteDb()
@@ -17,7 +19,10 @@ class TelegramBot:
 
         self.updater = Updater(self.config['API']['TelegramKey'])
 
+        self.updater.job_queue.run_repeating(self.coub_weekly, interval=datetime.timedelta(days=1),
+                                             first=datetime.time(8, 00, 00))
         self.updater.dispatcher.add_handler(CommandHandler('start', self.start))
+        self.updater.dispatcher.add_handler(CommandHandler('coub', self.random_coub))
         self.updater.dispatcher.add_handler(CommandHandler('ismintis', self.quotes))
         self.updater.dispatcher.add_handler(CommandHandler('prasiblaivek', self.reload))
         self.echo_handler = MessageHandler(Filters.text, self.echo)
@@ -26,8 +31,20 @@ class TelegramBot:
         self.updater.start_polling()
         self.updater.idle()
 
+    def coub_weekly(self, bot, job):
+        if self.now.weekday() == 4:
+            year = self.now.year
+            week = datetime.date(self.now.year, self.now.month, self.now.day).isocalendar()[1]
+            bot.send_message(chat_id=self.config['CHAT']['ChatId'], text='Nepamirstam paziureti http://coub.com/weekly/'
+                                                                         + str(year) + '/' + str(week - 1))
+
     def start(self, bot, update):
         update.message.reply_text('Sveiki, ponai!')
+
+    def random_coub(self, bot, update):
+        coub_link = self.coub.get_random_coub()
+        if coub_link != '':
+            bot.send_message(chat_id=update.message.chat_id, text=coub_link)
 
     def quotes(self, bot, update):
         update.message.reply_text(SqlLiteDb().get_random_quote()[0]['quote'])
