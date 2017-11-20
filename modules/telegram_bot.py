@@ -20,7 +20,7 @@ class TelegramBot:
         self.updater = Updater(self.config['API']['TelegramKey'])
 
         self.updater.job_queue.run_repeating(self.coub_weekly, interval=datetime.timedelta(days=1),
-                                             first=datetime.time(8, 00, 00))
+                                             first=datetime.time(7, 00, 00))
         self.updater.dispatcher.add_handler(CommandHandler('start', self.start))
         self.updater.dispatcher.add_handler(CommandHandler('coub', self.random_coub))
         self.updater.dispatcher.add_handler(CommandHandler('ismintis', self.quotes))
@@ -32,9 +32,10 @@ class TelegramBot:
         self.updater.idle()
 
     def coub_weekly(self, bot, job):
-        if self.now.weekday() == 4:
-            year = self.now.year
-            week = datetime.date(self.now.year, self.now.month, self.now.day).isocalendar()[1]
+        now = datetime.datetime.now()
+        if now.weekday() == 4:
+            year = now.year
+            week = datetime.date(now.year, now.month, now.day).isocalendar()[1]
             bot.send_message(chat_id=self.config['CHAT']['ChatId'], text='Nepamirstam paziureti http://coub.com/weekly/'
                                                                          + str(year) + '/' + str(week - 1))
 
