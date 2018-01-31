@@ -10,6 +10,6 @@ class GiphyApi:
         r = requests.get('https://api.giphy.com/v1/gifs/random?api_key={}&tag={}&rating=R'.format(self.api_key, tag))
         try:
             response = r.json()
-            return response['data']['url']
+            return {'url': response['data']['url'], 'id' : response['data']['id']}
         except (RuntimeError, TypeError, NameError, ValueError, KeyError):
             return ''

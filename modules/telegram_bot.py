@@ -54,6 +54,24 @@ class TelegramBot:
         update.message.reply_text('Taip, pone')
         self.giphy_keywords = self.db.get_giphy_keywords()
 
+    def giphy_gif(self, bot, update, search):
+        max_tries = 10
+        num_tries = 0
+        while True:
+            giphy = self.giphy.get_random_gif(search)
+            seen = SqlLiteDb().is_gif_seen(search, update.message.chat_id)
+            if seen == 0:
+                SqlLiteDb().insert_gif_info(giphy, search, update.message.chat_id)
+                break
+            else:
+                if num_tries < max_tries:
+                    num_tries = num_tries + 1
+                else:
+                    break
+
+        if giphy['url'] != '':
+            bot.send_message(chat_id=update.message.chat_id, text=giphy['url'])
+
     def echo(self, bot, update):
         if 'Sveikas, Marshalas'.upper() in update.message.text.upper():
             bot.send_message(chat_id=update.message.chat_id, text='Sveiki, ponai!')
@@ -63,10 +81,7 @@ class TelegramBot:
             coub_link = self.coub.get_random_coub()
             if coub_link != '':
                 bot.send_message(chat_id=update.message.chat_id, text=coub_link)
-
         # Giphy handling
         search = [item for item in self.giphy_keywords if item['keyword'].upper() in update.message.text.upper()]
         if len(search) != 0:
-            url = self.giphy.get_random_gif(search[0]['search_term'])
-            if url != '':
-                bot.send_message(chat_id=update.message.chat_id, text=url)
+            self.giphy_gif(bot, update, search[0]['search_term'])
